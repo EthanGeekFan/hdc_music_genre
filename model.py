@@ -9,6 +9,7 @@ from tqdm import tqdm
 import pre
 import torchaudio
 import torchaudio.transforms as T
+import torch.nn.functional as F
 
 
 class ANN(nn.Module):
@@ -18,10 +19,11 @@ class ANN(nn.Module):
         # 1 hidden layer and softmax output
         # loss function: cross entropy
         self.layers = nn.Sequential(
+            nn.Dropout(0.5),
             nn.Linear(input_dim, hidden_dim),
             nn.ReLU(),
             nn.Linear(hidden_dim, output_dim),
-            nn.Softmax(dim=1),
+            nn.LogSoftmax(dim=1),
         )
         # choose device based on availability
         if torch.cuda.is_available():
@@ -36,18 +38,29 @@ class ANN(nn.Module):
         self.to(self.device)
         
     def forward(self, x):
-        return self.layers(x)
+        logits = self.layers(x)
+        genre_scores = F.log_softmax(logits, dim=1)
+        return genre_scores
     
     def predict(self, x):
         return self.forward(x).argmax(dim=1)
     
     def loss(self, x, y):
-        return nn.CrossEntropyLoss()(self.forward(x), y)
+        return nn.NLLLoss()(self.forward(x), y)
     
     def accuracy(self, x, y):
         return (self.predict(x) == y).float().mean()
     
     def train(self, x, y, optimizer, x_test, y_test, epochs=100, batch_size=32):
+        print('Training on', self.device)
+        print('X shape:', x.shape)
+        print('Y shape:', y.shape)
+        # convert Y to one-hot
+        # y = F.one_hot(y, num_classes=10)
+        # y_test = F.one_hot(y_test, num_classes=10)
+        # print('Y shape:', y.shape)
+        # print(y[0])
+        # print('Y test shape:', y_test.shape)
         x = x.to(self.device)
         y = y.to(self.device)
         x_test = x_test.to(self.device)
@@ -92,7 +105,7 @@ def load_gtzan():
     return dataset
 
 
-HDC_DIM = 1024
+HDC_DIM = 512
 
 class HDC:
     '''
@@ -101,12 +114,12 @@ class HDC:
     encode intensity with a shared base vector
     '''
     
-    def __init__(self, dim, time_windows=None, scaling=6):
+    def __init__(self, dim, scaling=6):
         '''
         Initialize HDC encoder
         '''
         self.dim = dim
-        self.time_windows = time_windows
+        self.timeseries_length = None
         self.scaling = scaling
         # choose device based on availability
         if torch.cuda.is_available():
@@ -126,12 +139,13 @@ class HDC:
         self.mel_vectors = torch.rand(self.n_mels, HDC_DIM, device=self.device) * 2 * np.pi - np.pi
 
     
-    def init_time(self, time_windows):
+    def init_shape(self, shape):
         '''
         Initialize time vectors
         '''
-        self.time_windows = time_windows
-        self.time_vecs = torch.rand(time_windows, HDC_DIM, device=self.device) * 2 * np.pi - np.pi
+        self.num_features, self.timeseries_length = shape
+        self.feature_vecs = torch.rand(self.num_features, HDC_DIM, device=self.device) * 2 * np.pi - np.pi
+        self.time_vecs = torch.rand(self.timeseries_length, HDC_DIM, device=self.device) * 2 * np.pi - np.pi
         
     
     def encode(self, audio):
@@ -140,21 +154,20 @@ class HDC:
         '''
         # librosa returns 12 chroma vectors
         # audio = librosa.feature.chroma_stft(y=audio, sr=22050)
-        waveform = torch.tensor(audio, device=self.device)
-        audio = self.mel_spectrogram(waveform)
-        if self.time_windows is None:
-            self.init_time(audio.shape[1])
-        assert audio.shape[0] == self.n_mels
-        if not audio.shape[1] == self.time_windows:
+        if self.timeseries_length is None:
+            self.init_shape(audio.shape)
+        assert audio.shape[0] == self.num_features
+        if not audio.shape[1] == self.timeseries_length:
             print('Warning: audio shape does not match time windows')
             print('Audio shape: ', audio.shape)
-            print('Time windows: ', self.time_windows)
+            print('Time series length: ', self.timeseries_length)
             raise ValueError
+        audio = audio.to(self.device)
         # fractional bind
-        fb = (self.intenisty_base * self.scaling).unsqueeze(0).unsqueeze(0).repeat(self.n_mels, audio.shape[1], 1) * audio.unsqueeze(2)
-        # bind pitch
-        bp = fb + self.mel_vectors.unsqueeze(1).repeat(1, audio.shape[1], 1)
-        # bundle pitches
+        fb = (self.intenisty_base * self.scaling).unsqueeze(0).unsqueeze(0).repeat(self.num_features, audio.shape[1], 1) * audio.unsqueeze(2)
+        # bind features
+        bp = fb + self.feature_vecs.unsqueeze(1).repeat(1, self.timeseries_length, 1)
+        # bundle features
         bp_sin = torch.sin(bp)
         bp_cos = torch.cos(bp)
         bp_sin_sum = torch.sum(bp_sin, dim=0)
@@ -192,7 +205,7 @@ def hdc_preproc(ds):
         ds: dataset with chroma stft
     '''
     hdc_encoder = HDC(HDC_DIM)
-    ds = ds.map(lambda x: {'hdc': hdc_encoder.encode(x['audio'])}, desc="HDC encode")
+    ds = ds.map(lambda x: {'hdc': hdc_encoder.encode(x['features'])}, desc="HDC encode")
     return ds
 
 
@@ -204,10 +217,10 @@ def main():
     #     dataset = chroma_stft_preproc(dataset)
     #     dataset.save_to_disk('gtzan_chroma_stft')
     # find the minimum length of all audio
-    hdc_ds_path = f'gtzan_hdc_{HDC_DIM}'
+    hdc_ds_path = f'gtzan_hdc_standard_{HDC_DIM}'
     if not os.path.exists(hdc_ds_path):
-        dataset = pre.ten_pieces()
-        dataset.set_format('numpy', columns=['audio'])
+        dataset = pre.standard()
+        dataset.set_format('torch', columns=['features'])
         # preprocess
         dataset = hdc_preproc(dataset)
         dataset.save_to_disk(hdc_ds_path)
@@ -219,10 +232,10 @@ def main():
     train = dataset['train']
     test = dataset['test']
     # Build a ANN with 2048 input dimension and 10 output dimension, 1 hidden layer with 1024 dimension
-    model = ANN(HDC_DIM, 128, 10)
+    model = ANN(HDC_DIM, 30, 10)
     # Train the model
     losses, accuracies, test_accuracies = model.train(train['hdc'], train['genre'], 
-                                                      torch.optim.SGD(model.parameters(), lr=0.008, momentum=0.9, weight_decay=0.0001),
+                                                      torch.optim.Adam(model.parameters(), lr=0.0001),
                                                       test['hdc'], test['genre'],
                                                       epochs=100)
     # plot the loss, accuracy, test accuracy curve in two subplots
