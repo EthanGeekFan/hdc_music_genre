@@ -27,12 +27,18 @@ def proc(dataset):
     print('Piece length: ', piece_length)
     audios = []
     genres = []
+    ds = None
     for i in tqdm(range(len(dataset)), desc="Cut audio"):
         audio = dataset[i]['audio']['array'][:min_length]
         for j in range(10):
-            audios.append(audio[j*piece_length:(j+1)*piece_length])
-            genres.append(dataset[i]['genre'])
-    return Dataset.from_dict({'audio': audios, 'genre': genres}).cast_column('genre', ClassLabel(num_classes=10))
+            if ds is None:
+                ds = Dataset.from_dict({'audio': [{'array': audio[j*piece_length:(j+1)*piece_length]}], 'genre': [dataset[i]['genre']]})
+                continue
+            # audios.append({'array': audio[j*piece_length:(j+1)*piece_length]})
+            # genres.append(dataset[i]['genre'])
+            # add to dataset piece by piece to avoid memory overflow
+            ds = ds.add_item({'audio': {'array': audio[j*piece_length:(j+1)*piece_length]}, 'genre': dataset[i]['genre']})
+    return ds
 
 
 def ten_pieces():
@@ -40,6 +46,8 @@ def ten_pieces():
         print('Processing GTZAN dataset...')
         dataset = load_gtzan()
         dataset = proc(dataset)
+        dataset = std_proc(dataset)
+        dataset.shuffle(seed=229)
         dataset.save_to_disk('gtzan_10pieces')
     else:
         print('Loading processed GTZAN dataset...')
@@ -58,7 +66,7 @@ def std_proc(dataset):
     audios = []
     genres = []
     for i in tqdm(range(len(dataset)), desc="Extract features"):
-        audio = dataset[i]['audio']['array']
+        audio = np.array(dataset[i]['audio']['array'])
         mfcc = librosa.feature.mfcc(y=audio, sr=22050, hop_length=hop_length, n_fft=n_fft, n_mfcc=n_mfcc)
         spectral_centroid = librosa.feature.spectral_centroid(y=audio, sr=22050, hop_length=hop_length, n_fft=n_fft)
         chroma = librosa.feature.chroma_stft(y=audio, sr=22050, hop_length=hop_length, n_fft=n_fft)
@@ -85,6 +93,27 @@ def standard():
     else:
         print('Loading processed GTZAN dataset...')
         dataset = load_from_disk('gtzan_standard')
+    print(dataset)
+    print('Done!')
+    return dataset
+
+
+def raw_same_len_proc(dataset):
+    min_length = min([len(x['audio']['array']) for x in dataset])
+    print('Minimum length: ', min_length)
+    return dataset.map(lambda x: {'audio': x['audio']['array'][:min_length], 'genre': x['genre']}, remove_columns=['audio'])
+
+
+def raw_same_len():
+    if not os.path.exists('gtzan_raw_same_len'):
+        print('Processing GTZAN dataset...')
+        dataset = load_gtzan()
+        dataset = raw_same_len_proc(dataset)
+        dataset = dataset.cast_column('genre', ClassLabel(num_classes=10))
+        dataset.save_to_disk('gtzan_raw_same_len')
+    else:
+        print('Loading processed GTZAN dataset...')
+        dataset = load_from_disk('gtzan_raw_same_len')
     print(dataset)
     print('Done!')
     return dataset
