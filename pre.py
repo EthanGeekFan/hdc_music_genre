@@ -119,5 +119,14 @@ def raw_same_len():
     return dataset
 
 
+def raw():
+    dataset = load_gtzan()
+    min_length = min([len(x['audio']['array']) for x in dataset])
+    print(dataset)
+    print('Minimum length: ', min_length)
+    print('Done!')
+    return dataset, min_length
+
+
 if __name__ == '__main__':
     standard()

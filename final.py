@@ -18,6 +18,8 @@ print('HDC Dimension: ', HDC_DIM)
 SCALE = 3
 print('Scaling: ', SCALE)
 
+min_length = 0
+
 class HDC:
     '''
     Use FHRR representation
@@ -203,7 +205,7 @@ class HDC:
 
 
     def extract(self, audio):
-        feature = self.extract_features(audio)
+        feature = self.extract_features(audio['array'][:min_length])
 
         # bundle features
         bp_sin = torch.sin(feature)
@@ -300,7 +302,8 @@ class HDC:
 def main(num_data):
     torch.manual_seed(8263655087879647638)
     # Load dataset
-    dataset = pre.raw_same_len()
+    global min_length
+    dataset, min_length = pre.raw()
     dataset.set_format('torch', columns=['audio', 'genre'])
     # Split dataset
     dataset = dataset.train_test_split(test_size=0.1, seed=229, stratify_by_column='genre')
@@ -319,12 +322,13 @@ def main(num_data):
     test_acc = correct / len(test['genre'])
     print('Test Accuracy: ', test_acc)
     # Train accuracy
-    # correct = 0
-    # for audio, label in tqdm(zip(train['features'], train['genre']), "Training", total=len(train['genre'])):
-    #     prediction = model.recognize(audio)
-    #     if prediction == int(label):
-    #         correct += 1
-    # print('Train Accuracy: ', correct / len(train['genre']))
+    correct = 0
+    for audio, label in tqdm(zip(train['audio'][:num_data], train['genre'][:num_data]), "Test Train", total=len(train['genre'][:num_data])):
+        prediction = model.recognize(audio)
+        if prediction == int(label):
+            correct += 1
+    train_acc = correct / len(train['genre'][:num_data])
+    print('Train Accuracy: ', train_acc)
     # Test model and print a confusion matrix
     # confusion_matrix = np.zeros((10, 10))
     # for audio, label in tqdm(zip(test['audio'], test['genre']), "Testing", total=len(test['genre'])):
@@ -332,19 +336,25 @@ def main(num_data):
     #     confusion_matrix[int(label)][prediction] += 1
     # print('Confusion Matrix: ')
     # print(confusion_matrix)
-    return test_acc
+    return test_acc, train_acc
     
 
 if __name__ == '__main__':
-    # accs = []
-    # num_data = [i for i in range(100, 901, 100)]
-    # for i in num_data:
-    #     accs.append(main(i))
-    # num_data = [0] + num_data
-    # accs = [0.1] + accs
-    # plt.plot(num_data, accs)
-    # plt.xlabel('Number of Training Data')
-    # plt.ylabel('Accuracy')
-    # plt.title('HDC Accuracy vs Number of Training Data')
-    # plt.savefig('efficiency.png')
-    main(900)
+    test_accs = []
+    train_accs = []
+    num_data = [i for i in range(100, 901, 100)]
+    for i in num_data:
+        test_acc, train_acc = main(i)
+        test_accs.append(test_acc)
+        train_accs.append(train_acc)
+    num_data = [0] + num_data
+    train_accs = [0.1] + train_accs
+    test_accs = [0.1] + test_accs
+    plt.plot(num_data, test_accs, label='Test Accuracy')
+    plt.plot(num_data, train_accs, label='Train Accuracy')
+    plt.legend()
+    plt.xlabel('Number of Training Data')
+    plt.ylabel('Accuracy')
+    plt.title('HDC Accuracy vs Number of Training Data')
+    plt.savefig('efficiency.png')
+    # main(900)
