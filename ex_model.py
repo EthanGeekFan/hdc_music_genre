@@ -29,7 +29,7 @@ class ANN(nn.Module):
         if torch.cuda.is_available():
             self.device = torch.device('cuda') # NVIDIA GPU
             print('ANN Using CUDA GPU: ', torch.cuda.get_device_name(0))
-        elif torch.backends.is_available():
+        elif torch.backends.mps.is_available():
             self.device = torch.device('mps') # Apple GPU
             print('ANN Using Apple GPU')
         else:
@@ -125,7 +125,7 @@ class HDC:
         if torch.cuda.is_available():
             self.device = torch.device('cuda') # NVIDIA GPU
             print('HDC Encoder Using CUDA GPU: ', torch.cuda.get_device_name(0))
-        elif torch.backends.is_available():
+        elif torch.backends.mps.is_available():
             self.device = torch.device('mps') # Apple GPU
             print('HDC Encoder Using Apple GPU')
         else:
