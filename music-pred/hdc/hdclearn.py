@@ -42,10 +42,11 @@ def predict_song(mems,song):
     encoder = note_itemmem.encoder
     history = None
 
+    k = 3
     correct = 0
-    top3 = 0
-    notes_top3 = 0
-    rhythms_top3 = 0
+    topk = 0
+    notes_topk = 0
+    rhythms_topk = 0
 
     total =0 
     for notes in song.window(stride+1):
@@ -55,23 +56,24 @@ def predict_song(mems,song):
         note_key = encoder.encode_note_key(notes[stride])
         rhy_key = encoder.encode_rhythm_key(notes[stride-1].offset, notes[stride])
 
-        top_note = note_itemmem.lookup(note_hist, K=3)
-        top_rhy = rhy_itemmem.lookup(rhy_hist, K=3)
+        top_note = note_itemmem.lookup(note_hist, K=k)
+        top_rhy = rhy_itemmem.lookup(rhy_hist, K=k)
         print("top-note=%s note=%s" % (top_note, note_key))
         print("top-rhy=%s rhy=%s" % (top_rhy, rhy_key))
 
         if note_key in top_note.keys() and rhy_key in top_rhy.keys():
-            top3 += 1
+            topk += 1
         if note_key in top_note.keys():
-            notes_top3 += 1
+            notes_topk += 1
 
         if rhy_key in top_rhy.keys():
-            rhythms_top3 += 1
+            rhythms_topk += 1
 
         total += 1
 
-    print("both top-3=%f" % (top3/total*100.0))
-    print("  notes top-3=%f" % (notes_top3/total*100.0))
-    print("  rhythms top-3=%f" % (rhythms_top3/total*100.0))
+    print("=== correct note in top-%d ===" % (k))
+    print("both %f" % (topk/total*100.0))
+    print("  notes %f" % (notes_topk/total*100.0))
+    print("  rhythms %f" % (rhythms_topk/total*100.0))
 
     pass

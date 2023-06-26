@@ -43,7 +43,11 @@ class BasicEncoding:
     def encode_note(self,note):
         #notehv = self.basis_numer_notes.get(note.pitch.midi)
         if note.isChord:
-            raise NotImplementedError("this is a chord: %s" % note)
+            print("[warn] chord found. We only encode bottom note for chords.")
+            note_key = self.basis_notes.enum.from_pitch(note.notes[0].pitch.name)
+            notehv = self.basis_notes.get(note_key)
+            return notehv
+
 
         else:
             note_key = self.basis_notes.enum.from_pitch(note.pitch.name)
@@ -58,14 +62,29 @@ class BasicEncoding:
         return timehv,durhv
 
     def encode_relative_note(self,base_note,note):
-        note_id = note.pitch.midi
-        base_note_id = base_note.pitch.midi
-        diff = note_id - base_note_id
-        notehv = self.basis_melody.get(diff)
-        return notehv
+        if base_note.isChord:
+            base_note_id = base_note.notes[0].pitch.midi 
+        else:
+            base_note_id = base_note.pitch.midi 
+
+
+        if note.isChord:
+            print("[warn] chord found %s. Note that we only encode the bottom note for chords" % note)
+            note_id = note.notes[0].pitch.midi
+            diff = note_id - base_note_id
+            notehv = self.basis_melody.get(diff)
+            return notehv
+        else:
+            note_id = note.pitch.midi
+            diff = note_id - base_note_id
+            notehv = self.basis_melody.get(diff)
+            return notehv
 
     def encode_note_key(self,note):
-        return note.pitch.midi
+        if note.isChord:
+            return note.notes[0].pitch.midi
+        else:
+            return note.pitch.midi
 
     def encode_rhythm_key(self,timestamp,note):
         dur_key = self.basis_durations.enum.from_duration(note.duration)

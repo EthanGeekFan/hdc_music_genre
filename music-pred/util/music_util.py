@@ -40,13 +40,13 @@ def load_midi(midiPath):
     for midi_part in base_midi.parts:
         song = Song()
         for nt in midi_part.flat.notes:        
-            #Song.summarize_note(nt)
+            Song.summarize_note(nt)
             if isinstance(nt, note.Note):
                 song.add_note(nt)
             elif isinstance(nt, chord.Chord):
                 song.add_note(nt)
             else:
                 raise Exception("unsupported element: %s" % nt)
-        yield song
+    yield song
 
 
