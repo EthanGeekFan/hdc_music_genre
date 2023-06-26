@@ -58,7 +58,7 @@ def predict_song(mems,song):
 
         top_note = note_itemmem.lookup(note_hist, K=k)
         top_rhy = rhy_itemmem.lookup(rhy_hist, K=k)
-        print("top-note=%s note=%s" % (top_note, note_key))
+        print("top-note=%s note=%s (%s)" % (top_note, note_key, notes[stride]))
         print("top-rhy=%s rhy=%s" % (top_rhy, rhy_key))
 
         if note_key in top_note.keys() and rhy_key in top_rhy.keys():

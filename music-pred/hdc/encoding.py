@@ -69,11 +69,14 @@ class BasicEncoding:
 
 
         if note.isChord:
-            print("[warn] chord found %s. Note that we only encode the bottom note for chords" % note)
-            note_id = note.notes[0].pitch.midi
-            diff = note_id - base_note_id
-            notehv = self.basis_melody.get(diff)
-            return notehv
+            nhvs = []
+            for n in note.notes:
+                note_id = n.pitch.midi
+                diff = note_id - base_note_id
+                notehv = self.basis_melody.get(diff)
+                nhvs.append(notehv)
+
+            return self.hdc.bind(nhvs)
         else:
             note_id = note.pitch.midi
             diff = note_id - base_note_id
