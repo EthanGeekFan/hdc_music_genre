@@ -43,10 +43,13 @@ class BasicEncoding:
     def encode_note(self,note):
         #notehv = self.basis_numer_notes.get(note.pitch.midi)
         if note.isChord:
-            print("[warn] chord found. We only encode bottom note for chords.")
-            note_key = self.basis_notes.enum.from_pitch(note.notes[0].pitch.name)
-            notehv = self.basis_notes.get(note_key)
-            return notehv
+            hvs = []
+            for n in note.notes:
+                note_key = self.basis_notes.enum.from_pitch(n.pitch.name)
+                notehv = self.basis_notes.get(note_key)
+                hvs.append(notehv)
+
+            return self.hdc.bind(hvs)
 
 
         else:
