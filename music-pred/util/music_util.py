@@ -1,12 +1,11 @@
 
 from music21 import converter, corpus, instrument, midi, note, chord, pitch, roman, stream
+from music21.instrument import Piano
 import mido
 from mido import Message, MidiFile, MidiTrack
 from sklearn.metrics import jaccard_score
 
 from miditoolkit import MidiFile
-
-
 
 class Song:
 
@@ -28,25 +27,39 @@ class Song:
         for i in range(stride, len(self.notes)-stride):
             yield self.notes[i:i+stride]
 
+def write_song(track,filename,ghost_track=None):
+    if not ghost_track is None:
+        p1 = stream.Part(list(ghost_track.notes))
+        p1.partName = "ghost"
+        p2 = stream.Part(track)
+        p1.partName = "track"
+        s = stream.Stream([p1,p2])
+    else:
+        s = stream.Stream(track)
+
+    s.write('midi',fp=filename)
+    print("wrote file to %s" % filename)
 
 def load_midi(midiPath):
-    print("loading")
     mf = midi.MidiFile()
     mf.open(midiPath)
     mf.read()
     mf.close()
     base_midi = midi.translate.midiFileToStream(mf)
 
+    tracks = {}
     for midi_part in base_midi.parts:
         song = Song()
-        for nt in midi_part.flat.notes:        
-            Song.summarize_note(nt)
+        tracks[midi_part.partName] = song
+
+        for nt in midi_part.flatten().notes:        
+            #Song.summarize_note(nt)
             if isinstance(nt, note.Note):
                 song.add_note(nt)
             elif isinstance(nt, chord.Chord):
                 song.add_note(nt)
             else:
                 raise Exception("unsupported element: %s" % nt)
-    yield song
+    return tracks
 
 

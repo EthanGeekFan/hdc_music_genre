@@ -1,6 +1,6 @@
 import hdc.basis as basislib
 import hdc.hdc as hdclib
-
+import math
 
 class BasicEncoding:
 
@@ -10,11 +10,14 @@ class BasicEncoding:
         self.hdc = hdclib.HDC()
 
     def create_basis_hypervectors(self):
-        self.basis_numer_notes = basislib.BasisHVsNumerNotes(self.N, self.N*0.05)
-        self.basis_melody = basislib.BasisHVsMelody(self.N, self.N*0.05)
+        resolution = 0.05
+        self.basis_numer_notes = basislib.BasisHVsNumerNotes(self.N, self.N*resolution)
+        self.basis_melody = basislib.BasisHVsMelody(self.N, self.N*resolution)
         self.basis_durations = basislib.BasisHVsDuration(self.N)
-        self.basis_rests = basislib.BasisHVsRests(self.N,self.N*0.05)
+        self.basis_numer_durations = basislib.BasisHVsNumerDuration(self.N,self.N*resolution)
+        self.basis_rests = basislib.BasisHVsRests(self.N,self.N*resolution)
         self.basis_notes = basislib.BasisHVsNotes(self.N) 
+        self.basis_octaves = basislib.BasisHVAbsOctaves(self.N, self.N*resolution) 
 
     def encode_rhythm_history(self,notes):
         win = []
@@ -44,24 +47,29 @@ class BasicEncoding:
         #notehv = self.basis_numer_notes.get(note.pitch.midi)
         if note.isChord:
             hvs = []
+            octv = self.basis_octaves.get(note.notes[0].octave)
+
             for n in note.notes:
                 note_key = self.basis_notes.enum.from_pitch(n.pitch.name)
                 notehv = self.basis_notes.get(note_key)
                 hvs.append(notehv)
 
+            #return self.hdc.bind([octv]+hvs)
             return self.hdc.bind(hvs)
 
 
         else:
+            octv = self.basis_octaves.get(note.octave)
             note_key = self.basis_notes.enum.from_pitch(note.pitch.name)
             notehv = self.basis_notes.get(note_key)
-            return notehv
+            #return self.hdc.bind([octv,notehv])
+            return notehv 
 
     def encode_rhythm(self,timestamp, note):
-        dur_key = self.basis_durations.enum.from_duration(note.duration)
-        time_diff = (note.offset - timestamp)*4 
-        durhv = self.basis_durations.get(dur_key)
-        timehv = self.basis_rests.get(time_diff)
+        #dur_key = self.basis_durations.enum.from_duration(note.duration)
+        #durhv = self.basis_durations.get(dur_key)
+        durhv = self.basis_numer_durations.get_value(note.duration)
+        timehv = self.basis_rests.get_value(note.offset - timestamp)
         return timehv,durhv
 
     def encode_relative_note(self,base_note,note):
@@ -78,7 +86,6 @@ class BasicEncoding:
                 diff = note_id - base_note_id
                 notehv = self.basis_melody.get(diff)
                 nhvs.append(notehv)
-
             return self.hdc.bind(nhvs)
         else:
             note_id = note.pitch.midi
@@ -93,6 +100,6 @@ class BasicEncoding:
             return note.pitch.midi
 
     def encode_rhythm_key(self,timestamp,note):
-        dur_key = self.basis_durations.enum.from_duration(note.duration)
-        time_diff = (note.offset - timestamp)*4 
+        dur_key = note.duration.quarterLength 
+        time_diff = (note.offset - timestamp)  
         return (time_diff,dur_key)
