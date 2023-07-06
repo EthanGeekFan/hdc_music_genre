@@ -1,6 +1,29 @@
 from hdc.hdc import HDC
 from enum import Enum
-import math 
+import math
+import numpy as np
+
+
+def c_gen_hv_to_hex_arr(hv: list[int]) -> str:
+    # for each 32 ints, convert to a uint literal 0x00000000
+    # then join them all together
+    nums = []
+    words = len(hv) // 32
+    tail = len(hv) % 32
+    for i in range(words):
+        num = 0
+        for j in range(32):
+            num = num << 1
+            num = num | (hv[i*32+j] & 1)
+        nums.append(num)
+    if tail > 0:
+        num = 0
+        for j in range(tail):
+            num = num << 1
+            num = num | (hv[words*32+j] & 1)
+        num = num << (32-tail)
+        nums.append(num)
+    return "{" + ", ".join(map(lambda n: "0x%08x" % n, nums)) + "}"
 
 
 class BasisHVs:
@@ -37,6 +60,21 @@ class BasisHVs:
 
     def get(self,key):
         return self.hvs[key]
+    
+    def __str__(self) -> str:
+        s = "{\n"
+        for key,hv in self.hvs.items():
+            s += "\t%s: dim(%s)\n" % (key,str(len(hv)))
+        s += "}"
+        return s
+    
+    def c_code(self, indent: str = "") -> str:
+        code = "/* %s */\n" % self.name
+        code += indent + "std::map<std::string, unsigned int *> %s = {\n" % self.name
+        for key,hv in self.hvs.items():
+            code += indent + "    { \"%s\", new unsigned int[%d]%s },\n" % (key, self.N, c_gen_hv_to_hex_arr(hv))
+        code += indent + "};\n"
+        return code
 
      
 class BasisHVsValues(BasisHVs):

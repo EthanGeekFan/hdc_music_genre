@@ -17,7 +17,23 @@ class BasicEncoding:
         self.basis_numer_durations = basislib.BasisHVsNumerDuration(self.N,self.N*resolution)
         self.basis_rests = basislib.BasisHVsRests(self.N,self.N*resolution)
         self.basis_notes = basislib.BasisHVsNotes(self.N) 
-        self.basis_octaves = basislib.BasisHVAbsOctaves(self.N, self.N*resolution) 
+        self.basis_octaves = basislib.BasisHVAbsOctaves(self.N, self.N*resolution)
+        print("Created basis hypervectors:")
+        print("  numer_notes: ",self.basis_numer_notes)
+        print(self.basis_numer_notes.c_code())
+        print("  melody: ",self.basis_melody)
+        print(self.basis_melody.c_code())
+        print("  durations: ",self.basis_durations)
+        print(self.basis_durations.c_code())
+        print("  numer_durations: ",self.basis_numer_durations)
+        print(self.basis_numer_durations.c_code())
+        print("  rests: ",self.basis_rests)
+        print(self.basis_rests.c_code())
+        print("  notes: ",self.basis_notes)
+        print(self.basis_notes.c_code())
+        print("  octaves: ",self.basis_octaves)
+        print(self.basis_octaves.c_code())
+        self.c_gen()
 
     def encode_rhythm_history(self,notes):
         win = []
@@ -103,3 +119,36 @@ class BasicEncoding:
         dur_key = note.duration.quarterLength 
         time_diff = (note.offset - timestamp)  
         return (time_diff,dur_key)
+    
+    def c_code(self):
+        header = [
+            "#ifndef BASIC_ENCODING_H",
+            "#define BASIC_ENCODING_H",
+            "#include <map>",
+            "#include <string>",
+        ]
+        sep = "\n" * 2
+        footer = "#endif // BASIC_ENCODING_H"
+        code = ""
+        code += "\n".join(header)
+        code += sep
+        code += self.basis_numer_notes.c_code()
+        code += sep
+        code += self.basis_melody.c_code()
+        code += sep
+        code += self.basis_durations.c_code()
+        code += sep
+        code += self.basis_numer_durations.c_code()
+        code += sep
+        code += self.basis_rests.c_code()
+        code += sep
+        code += self.basis_notes.c_code()
+        code += sep
+        code += self.basis_octaves.c_code()
+        code += sep
+        code += footer
+        return code
+    
+    def c_gen(self):
+        with open("basic_encoding.h","w") as f:
+            f.write(self.c_code())

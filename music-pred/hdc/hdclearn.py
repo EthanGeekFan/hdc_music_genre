@@ -147,9 +147,20 @@ def predict_song(mems,song,k=3):
     for notes in (pbar := tqdm(song.window(stride+1), total=n_windows)):
         note_hist = encoder.encode_note_history(notes[:stride])
         rhy_hist = encoder.encode_rhythm_history(notes[:stride])
+        # print("note_hist=")
+        # print(note_hist)
+        # print("rhy_hist=")
+        # print(rhy_hist)
+        # print("notes=")
+        # print(notes)
 
         note_key = encoder.encode_note_key(notes[stride])
         rhy_key = encoder.encode_rhythm_key(notes[stride-1].offset, notes[stride])
+        # print("note_key=")
+        # print(note_key)
+        # print("rhy_key=")
+        # print(rhy_key)
+        # exit()
 
         top_note = note_itemmem.lookup(note_hist, K=k)
         top_rhy = rhy_itemmem.lookup(rhy_hist, K=k)

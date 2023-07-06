@@ -1,0 +1,41 @@
+{
+    "files.associations": {
+        "*.ino": "cpp",
+        "*.html": "html",
+        "*.arb": "json",
+        "*.flex": "lex",
+        "cstdint": "cpp",
+        "bit": "cpp",
+        "array": "cpp",
+        "*.tcc": "cpp",
+        "cctype": "cpp",
+        "clocale": "cpp",
+        "cmath": "cpp",
+        "compare": "cpp",
+        "concepts": "cpp",
+        "cstdio": "cpp",
+        "cstdlib": "cpp",
+        "cwchar": "cpp",
+        "map": "cpp",
+        "exception": "cpp",
+        "initializer_list": "cpp",
+        "iosfwd": "cpp",
+        "limits": "cpp",
+        "new": "cpp",
+        "numbers": "cpp",
+        "string": "cpp",
+        "string_view": "cpp",
+        "tuple": "cpp",
+        "type_traits": "cpp",
+        "typeinfo": "cpp",
+        "utility": "cpp"
+    },
+    "C_Cpp.default.configurationProvider": "ms-vscode.makefile-tools",
+    "makefile.launchConfigurations": [
+        {
+            "cwd": "/home/ethan/projects/hdc_music_genre/music-pred/impl",
+            "binaryPath": "/home/ethan/projects/hdc_music_genre/music-pred/impl/mpred",
+            "binaryArgs": []
+        }
+    ]
+}
