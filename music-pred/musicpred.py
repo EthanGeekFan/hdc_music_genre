@@ -17,7 +17,33 @@ for idx,(name,song) in enumerate(tracks.items()):
     print("-> learning track %s" % name)
     itemmem = hdclib.learn_song(N,song)
 
-   
+    # generate code for itemmem
+    print("-> generating code for %s" % name)
+    memheader = [
+        "#ifndef ITEMMEM_H",
+        "#define ITEMMEM_H",
+        "",
+        "#include <map>",
+        "#include <string>",
+    ]
+    code = [
+        itemmem[0].c_code("note_itemmem"),
+        itemmem[1].c_code("rhy_itemmem"),
+    ]
+    memfooter = [
+        "#endif // ITEMMEM_H"
+    ]
+    with open("itemmem.h", "w") as f:
+        f.write("\n".join(memheader))
+        f.write("\n")
+        f.write("\n".join(code))
+        f.write("\n")
+        f.write("\n".join(memfooter))
+
+    itemmem[0].encoder.c_gen()
+    
+    print("-> code gen completed")
+
     print("-> generating %s" % name)
     # for k in range(1,4):
     #     for j in range(1,n_gen_notes+1):

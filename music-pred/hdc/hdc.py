@@ -64,6 +64,28 @@ class BSC:
             j = n - i - 1
             yield cls.permute(lst[j],j)
 
+    @classmethod
+    def c_code(cls, hv: list[int]) -> str:
+        # for each 32 ints, convert to a uint literal 0x00000000
+        # then join them all together
+        nums = []
+        words = len(hv) // 32
+        tail = len(hv) % 32
+        for i in range(words):
+            num = 0
+            for j in range(32):
+                num = num << 1
+                num = num | (hv[i*32+j] & 1)
+            nums.append(num)
+        if tail > 0:
+            num = 0
+            for j in range(tail):
+                num = num << 1
+                num = num | (hv[words*32+j] & 1)
+            num = num << (32-tail)
+            nums.append(num)
+        return "{" + ", ".join(map(lambda n: "0x%08x" % n, nums)) + "}"
+
 def HDC():
     return BSC
 
@@ -91,3 +113,11 @@ class ItemMemory:
         top_inds = np.argsort(dists)
         scores = list(map(lambda i: (keys[i], dists[i]), top_inds[:K]))
         return dict(scores)
+    
+    def c_code(self, name: str = "ItemMemory", indent: str = "") -> str:
+        code = "/* %s */\n" % name
+        code += indent + "std::map<std::string, unsigned int *> %s = {\n" % name
+        for key,hv in self.mem.items():
+            code += indent + "    { \"%s\", new unsigned int[%d]%s },\n" % (key, self.encoder.N, self.encoder.hdc.c_code(hv))
+        code += indent + "};\n"
+        return code

@@ -33,7 +33,7 @@ class BasicEncoding:
         print(self.basis_notes.c_code())
         print("  octaves: ",self.basis_octaves)
         print(self.basis_octaves.c_code())
-        self.c_gen()
+        # self.c_gen()
 
     def encode_rhythm_history(self,notes):
         win = []

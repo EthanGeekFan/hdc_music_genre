@@ -42,14 +42,10 @@ BSC BSC::copy() {
 
 BSC BSC::permute(unsigned int perm) {
     BSC bsc = BSC(this->dim);
-    // bit shift left by perm
-    unsigned int word_ofs = perm / 32;
-    unsigned int bit_ofs = perm % 32;
-    unsigned int bit_ofs_inv = 32 - bit_ofs;
-    for (unsigned int i = 0; i < this->words; i++) {
-        bsc.data[i] = this->data[(i + word_ofs) % this->words] << bit_ofs;
-        bsc.data[i] |= this->data[(i + word_ofs + 1) % this->words] >> bit_ofs_inv;
-    }
+    perm = perm % this->words;
+    // byte shift left by perm bytes
+    memcpy(bsc.data, this->data + perm, (this->words - perm) * sizeof(unsigned int));
+    memcpy(bsc.data + this->words - perm, this->data, perm * sizeof(unsigned int));
     return bsc;
 }
 
