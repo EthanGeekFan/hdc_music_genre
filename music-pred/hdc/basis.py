@@ -70,9 +70,9 @@ class BasisHVs:
     
     def c_code(self, indent: str = "") -> str:
         code = "/* %s */\n" % self.name
-        code += indent + "std::map<std::string, unsigned int *> %s = {\n" % self.name
+        code += indent + "std::map<std::string, unsigned int *> basis_%s = {\n" % self.name
         for key,hv in self.hvs.items():
-            code += indent + "    { \"%s\", new unsigned int[%d]%s },\n" % (key, self.N, c_gen_hv_to_hex_arr(hv))
+            code += indent + "    { \"%s\", new unsigned int[%d]%s },\n" % (key, self.N // 32, c_gen_hv_to_hex_arr(hv))
         code += indent + "};\n"
         return code
 
@@ -131,6 +131,16 @@ class BasisHVsValues(BasisHVs):
         hv = h[0:count] + l[count:]
         assert(len(hv) == len(h))
         return hv
+    
+    def c_code(self, indent: str = "") -> str:
+        code = "/* %s */\n" % self.name
+        code += indent + "std::map<int, unsigned int *> basis_%s = {\n" % self.name
+        for key,hv in self.hvs.items():
+            if key == "overflow" or key == "underflow":
+                continue
+            code += indent + "    { %d, new unsigned int[%d]%s },\n" % (key, self.N // 32, c_gen_hv_to_hex_arr(hv))
+        code += indent + "};\n"
+        return code
 
 
 class BasisHVsNotes(BasisHVs):

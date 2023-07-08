@@ -1,3 +1,4 @@
+from transsong import encode_song
 import util.music_util as music_util
 import hdc.hdclearn as hdclib
 import sys
@@ -9,7 +10,7 @@ print("-> loading %s" % midiPath)
 basename = midiPath.split("/")[1].split(".mid")[0]
 
 tracks = music_util.load_midi(midiPath)
-N = 10000
+N = 10240
 n_gen_notes = 5
 n_user=6
 for idx,(name,song) in enumerate(tracks.items()):
@@ -17,6 +18,24 @@ for idx,(name,song) in enumerate(tracks.items()):
     print("-> learning track %s" % name)
     itemmem = hdclib.learn_song(N,song)
 
+    # generate code for song
+    print("-> generating code for %s %s" % (basename, name))
+    songheader = [
+        "#ifndef SONG_H",
+        "#define SONG_H",
+        "",
+    ]
+    code = encode_song(song)
+    songfooter = [
+        "",
+        "#endif // SONG_H"
+    ]
+    with open("%s.h" % basename, "w") as f:
+        f.write("\n".join(songheader))
+        f.write("\n")
+        f.write(code)
+        f.write("\n")
+        f.write("\n".join(songfooter))
     # generate code for itemmem
     print("-> generating code for %s" % name)
     memheader = [

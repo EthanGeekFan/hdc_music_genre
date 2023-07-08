@@ -6,7 +6,7 @@
 #include <bit>
 #include "hdc.h"
 
-BSC::BSC(unsigned int dim, bool rand_init) {
+BSC::BSC(unsigned int dim, unsigned int *data) {
     if (dim % 256 != 0) {
         printf("Error: dim must be a multiple of 256 for efficiency considerations\n");
         exit(1);
@@ -14,14 +14,15 @@ BSC::BSC(unsigned int dim, bool rand_init) {
     this->dim = dim;
     this->words = dim / 32;
     this->vec_size = dim / 256;
-    this->data = new unsigned int[this->words];
-    if (rand_init) {
-        this->rand_init();
-    }
+    this->data = data != NULL ? data : new unsigned int[this->words];
 }
 
 BSC::~BSC() {
     delete[] this->data;
+}
+
+void BSC::assign(unsigned int *data) {
+    std::memcpy(this->data, data, this->words * sizeof(unsigned int));
 }
 
 void BSC::rand_init() {
@@ -65,7 +66,7 @@ unsigned int BSC::hamming_distance(BSC &other) {
     assert(this->dim == other.dim);
     unsigned int dist = 0;
     for (unsigned int i = 0; i < this->words; i++) {
-        dist += std::__popcount(this->data[i] ^ other.data[i]);
+        dist += std::popcount(this->data[i] ^ other.data[i]);
     }
     return dist;
 }

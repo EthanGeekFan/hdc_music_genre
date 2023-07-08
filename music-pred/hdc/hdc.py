@@ -3,6 +3,8 @@ import functools
 import operator 
 import math
 
+random = np.random.RandomState(0)
+
 class BSC:
 
     def __init__(self):
@@ -11,7 +13,7 @@ class BSC:
 
     @classmethod
     def random_hypervector(cls,N):
-        return list(np.random.binomial(1,0.5,N))
+        return list(random.binomial(1,0.5,N))
 
     @classmethod
     def is_binary(cls,hv):
@@ -31,7 +33,7 @@ class BSC:
         else:
             k = len(els) / 2.0
             sums = list(map(lambda t: sum(t), zip(*els)))
-            hv = list(map(lambda s: np.random.binomial(1,0.5) if s == k else int(math.floor(s/(k+0.1))), sums))
+            hv = list(map(lambda s: random.binomial(1,0.5) if s == k else int(math.floor(s/(k+0.1))), sums))
             cls.is_binary(hv)
             return hv
 
@@ -116,8 +118,11 @@ class ItemMemory:
     
     def c_code(self, name: str = "ItemMemory", indent: str = "") -> str:
         code = "/* %s */\n" % name
-        code += indent + "std::map<std::string, unsigned int *> %s = {\n" % name
+        k_type = "int" if isinstance(list(self.mem.keys())[0], int) else "std::string"
+        code += indent + "std::map<%s, unsigned int *> %s = {\n" % (k_type, name)
         for key,hv in self.mem.items():
-            code += indent + "    { \"%s\", new unsigned int[%d]%s },\n" % (key, self.encoder.N, self.encoder.hdc.c_code(hv))
+            if k_type != "int":
+                key = '"%s"' % (key,)
+            code += indent + "    { %s, new unsigned int[%d]%s },\n" % (key, self.encoder.N // 32, self.encoder.hdc.c_code(hv))
         code += indent + "};\n"
         return code

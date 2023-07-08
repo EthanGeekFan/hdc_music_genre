@@ -11,8 +11,15 @@ public:
     unsigned int vec_size;
     unsigned int *data;
 
-    BSC(unsigned int dim, bool rand_init = false);
+    BSC(unsigned int dim, unsigned int *data = NULL);
     ~BSC();
+
+    /**
+     * @brief Assign the vector with data
+     * 
+     * @param data 
+     */
+    void assign(unsigned int *data);
 
     /**
      * @brief Copy the vector
