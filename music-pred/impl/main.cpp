@@ -22,8 +22,8 @@ int test() {
     d.print();
     printf("should similar to b: %d\n", b.hamming_distance(d));
     printf("Permutation:\n");
-    for (int i = 0; i < 32; i++) {
-        BSC d = a << 32 + i;
+    for (int i = 0; i < 4; i++) {
+        BSC d = a << i;
         d.print();
     }
     printf("Hamming distance: %d\n", a.hamming_distance(b));

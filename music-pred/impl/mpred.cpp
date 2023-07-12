@@ -46,7 +46,7 @@ BSC encode_note(
             BSC note_vec = BSC(N, basis_pitch[pitch]);
             note_vecs.push_back(note_vec);
         }
-        BSC &res = note_vecs[0];
+        BSC res = note_vecs[0];
         for (size_t i = 1; i < note_vecs.size(); i++) {
             res = res * note_vecs[i];
         }
@@ -92,8 +92,8 @@ int itemmem_lookup(BSC &note_hist) {
     }
     printf("min_dist: %d\n", min_dist);
     printf("min_id: %d\n", min_id);
-    printf("note_hist:\n");
-    note_hist.print();
+    // printf("note_hist:\n");
+    // note_hist.print();
     return min_id;
 }
 
@@ -176,5 +176,13 @@ int main() {
         6,
         1
     );
+    // BSC basis = BSC(N, basis_pitch[0]);
+    // basis.print();
+    // printf("permute by 1\n");
+    // basis = basis << 1;
+    // basis.print();
+    // printf("permute by 2\n");
+    // basis = basis << 1;
+    // basis.print();
     return 0;
 }

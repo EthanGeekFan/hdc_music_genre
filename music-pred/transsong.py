@@ -9,6 +9,10 @@ def encode_song(song):
         else:
             ntarr.append(1)
             ntarr.append(note.pitch.midi)
+            # print()
+            # print(note.pitch.name)
+            # print(note.pitch.midi)
+            # print((note.pitch.midi + 3) % 12)
         n_notes += 1
 
     # encode to c array

@@ -77,14 +77,12 @@ class BSC:
         for i in range(words):
             num = 0
             for j in range(32):
-                num = num << 1
-                num = num | (hv[i*32+j] & 1)
+                num |= (hv[i*32+j] & 1) << j
             nums.append(num)
         if tail > 0:
             num = 0
             for j in range(tail):
-                num = num << 1
-                num = num | (hv[words*32+j] & 1)
+                num |= (hv[words*32+j] & 1) << j
             num = num << (32-tail)
             nums.append(num)
         return "{" + ", ".join(map(lambda n: "0x%08x" % n, nums)) + "}"

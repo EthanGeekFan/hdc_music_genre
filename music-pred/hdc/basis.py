@@ -4,26 +4,26 @@ import math
 import numpy as np
 
 
-def c_gen_hv_to_hex_arr(hv: list[int]) -> str:
-    # for each 32 ints, convert to a uint literal 0x00000000
-    # then join them all together
-    nums = []
-    words = len(hv) // 32
-    tail = len(hv) % 32
-    for i in range(words):
-        num = 0
-        for j in range(32):
-            num = num << 1
-            num = num | (hv[i*32+j] & 1)
-        nums.append(num)
-    if tail > 0:
-        num = 0
-        for j in range(tail):
-            num = num << 1
-            num = num | (hv[words*32+j] & 1)
-        num = num << (32-tail)
-        nums.append(num)
-    return "{" + ", ".join(map(lambda n: "0x%08x" % n, nums)) + "}"
+# def c_gen_hv_to_hex_arr(hv: list[int]) -> str:
+#     # for each 32 ints, convert to a uint literal 0x00000000
+#     # then join them all together
+#     nums = []
+#     words = len(hv) // 32
+#     tail = len(hv) % 32
+#     for i in range(words):
+#         num = 0
+#         for j in range(32):
+#             num = num << 1
+#             num = num | (hv[i*32+j] & 1)
+#         nums.append(num)
+#     if tail > 0:
+#         num = 0
+#         for j in range(tail):
+#             num = num << 1
+#             num = num | (hv[words*32+j] & 1)
+#         num = num << (32-tail)
+#         nums.append(num)
+#     return "{" + ", ".join(map(lambda n: "0x%08x" % n, nums)) + "}"
 
 
 class BasisHVs:
@@ -72,7 +72,7 @@ class BasisHVs:
         code = "/* %s */\n" % self.name
         code += indent + "std::map<std::string, unsigned int *> basis_%s = {\n" % self.name
         for key,hv in self.hvs.items():
-            code += indent + "    { \"%s\", new unsigned int[%d]%s },\n" % (key, self.N // 32, c_gen_hv_to_hex_arr(hv))
+            code += indent + "    { \"%s\", new unsigned int[%d]%s },\n" % (key, self.N // 32, self.hdc.c_code(hv))
         code += indent + "};\n"
         return code
 
@@ -138,7 +138,7 @@ class BasisHVsValues(BasisHVs):
         for key,hv in self.hvs.items():
             if key == "overflow" or key == "underflow":
                 continue
-            code += indent + "    { %d, new unsigned int[%d]%s },\n" % (key, self.N // 32, c_gen_hv_to_hex_arr(hv))
+            code += indent + "    { %d, new unsigned int[%d]%s },\n" % (key, self.N // 32, self.hdc.c_code(hv))
         code += indent + "};\n"
         return code
 
@@ -180,6 +180,11 @@ class BasisHVsNotes(BasisHVs):
         for key in keys:
             code += indent + "    %s, /* %s */\n" % (self.hdc.c_code(self.hvs[key]), key.value)
         code += indent + "};\n"
+        # print("Basis pitch A = %s" % self.hvs[self.Pitches.A])
+        # print("permute by 1")
+        # print(self.hdc.permute(self.hvs[self.Pitches.A],1))
+        # print("permute by 2")
+        # print(self.hdc.permute(self.hvs[self.Pitches.A],2))
         return code
 
 

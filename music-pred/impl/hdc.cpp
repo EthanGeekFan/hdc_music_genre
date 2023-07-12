@@ -50,10 +50,13 @@ BSC BSC::copy() {
 
 BSC BSC::permute(unsigned int perm) {
     BSC bsc = BSC(this->dim);
-    perm = perm % this->words;
+    perm = perm % (dim >> 3);
     // byte shift left by perm bytes
-    memcpy(bsc.data, this->data + perm, (this->words - perm) * sizeof(unsigned int));
-    memcpy(bsc.data + this->words - perm, this->data, perm * sizeof(unsigned int));
+    char *src = (char *)this->data;
+    char *dst = (char *)bsc.data;
+    unsigned int len = this->words * sizeof(unsigned int);
+    std::memcpy(dst, src + perm, len - perm);
+    std::memcpy(dst + len - perm, src, perm);
     return bsc;
 }
 
@@ -82,7 +85,7 @@ void BSC::print() {
     for (unsigned int i = 0; i < this->words; i++) {
         // print binary representation of this->data[i]
         for (unsigned int j = 0; j < 32; j++) {
-            printf("%d", (this->data[i] >> (31 - j)) & 1);
+            printf("%d", (this->data[i] >> j) & 1);
         }
         printf(" ");
     }
