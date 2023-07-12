@@ -15,10 +15,17 @@ BSC::BSC(unsigned int dim, unsigned int *data) {
     this->words = dim / 32;
     this->vec_size = dim / 256;
     this->data = data != NULL ? data : new unsigned int[this->words];
+    this->need_free = data == NULL;
+    if (data == NULL) {
+        printf("Warning: data is NULL, the vector is not initialized\n");
+    }
 }
 
 BSC::~BSC() {
-    delete[] this->data;
+    if (this->need_free) {
+        // delete[] this->data;
+        // 
+    }
 }
 
 void BSC::assign(unsigned int *data) {

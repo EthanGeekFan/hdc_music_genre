@@ -171,6 +171,18 @@ class BasisHVsNotes(BasisHVs):
         BasisHVs.__init__(self,"pitch",N)
         self.from_enum(BasisHVsNotes.Pitches)
 
+    
+    def c_code(self, indent: str = "") -> str:
+        # write as an array [A,Bf,B,C,Cs,D,Ef,E,F,Fs,G,Gs]
+        code = indent + "/* %s */\n" % self.name
+        code += indent + "unsigned int basis_%s[%d][%d] = {\n" % (self.name,len(self.hvs),self.N // 32)
+        keys = [self.Pitches.A, self.Pitches.Bf, self.Pitches.B, self.Pitches.C, self.Pitches.Cs, self.Pitches.D, self.Pitches.Ef, self.Pitches.E, self.Pitches.F, self.Pitches.Fs, self.Pitches.G, self.Pitches.Gs]
+        for key in keys:
+            code += indent + "    %s, /* %s */\n" % (self.hdc.c_code(self.hvs[key]), key.value)
+        code += indent + "};\n"
+        return code
+
+
 
 
 class BasisHVsDuration(BasisHVs):

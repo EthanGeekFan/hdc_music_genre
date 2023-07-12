@@ -74,13 +74,20 @@ public:
         return this->permute(perm);
     }
 
-private:
-
     /**
      * @brief Initialize the vector with random values
      * 
      */
     void rand_init();
+    
+private:
+
+    /**
+     * @brief Whether the vector needs to be freed
+     * 
+     */
+    bool need_free;
+
 };
 
 

@@ -53,6 +53,7 @@ class BSC:
 
     @classmethod
     def permute(cls,hv,k):
+        k *= 8
         if k == 1:
             return hv[k:] + [hv[0]]
         else:
